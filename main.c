@@ -1,16 +1,13 @@
-/******************************************************************************
-* EE138                                                                       *
+/******************************************************************************                                                             
 * Long Tran                                                                   *
-* Lab 1 Task 2                                                                *
-* 2/16/21                                                                     *
-*                               - WEEK 2 -                                    *
-* Task 2: Display input to keypad                                             *
+*                                                                             *                                                                              
+* Program: Display input to keypad                                            *
 * Important Ports:                                                            *
 * P4.x is OUTPUT to control LED                                               *
 * P8.x is OUTPUT to display digit (1 at a time)                               *
-* P9.x is INPUT from keypad       					      *
-*                                            			              *
-* Demo: https://youtu.be/VUVd9RPUBLM					      *
+* P9.x is INPUT from keypad       					                          *
+*                                            			                      *
+* Demo: https://youtu.be/VUVd9RPUBLM		                  			      *
 ******************************************************************************/
 
 #include "msp.h"
