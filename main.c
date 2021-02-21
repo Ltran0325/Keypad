@@ -70,7 +70,7 @@ void main(void)
 
         for(i = 0; i < 4; i++){             // UPDATE DISPLAY
             P4->OUT = 0xFF;                 // clear current display
-            P8->OUT = 0xFF & ~(BIT1 >> i);  // shift active display
+            P8->OUT = 0xFF & ~(BIT5 >> i);  // shift active display
             P4->OUT = display[i];           // display char
 
             for(j = 0; j < 4; j++){         // SCAN FOR INPUT
@@ -92,7 +92,7 @@ void main(void)
                 
             case PRESS:                             // PULSE COUNTER
                 P4->OUT = 0xFF;                     // clear current display
-                P8->OUT = 0xFF & ~(BIT1 >> key_y);  // switch to row where input was prev found
+                P8->OUT = 0xFF & ~(BIT5 >> key_y);  // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;             // read column input
                 if(temp = key_x){
                     gl_count++;
@@ -116,7 +116,7 @@ void main(void)
 
             case RELEASE:                           // PULSE COUNTER
                 P4->OUT = 0xFF;                     // clear output to display
-                P8->OUT = 0xFF & ~(BIT1 >> key_y);  // switch to row where input was prev found
+                P8->OUT = 0xFF & ~(BIT5 >> key_y);  // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;             // read keypad column input
                 if(temp == 0){
                     gl_count++;
