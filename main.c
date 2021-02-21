@@ -89,8 +89,7 @@ void main(void)
                     state = PRESS;                  // go to PRESS state
                     gl_count = 0;
                 }break;
-
-
+                
             case PRESS:                             // PULSE COUNTER
                 P4->OUT = 0xFF;                     // clear current display
                 P8->OUT = 0xFF & ~(0x20 >> key_y);  // switch to row where input was prev found
@@ -104,7 +103,6 @@ void main(void)
                    }else{
                        state = IDLE;                // else, restart
                    }break;
-
 
             case PROCESS:                           // ACKNOWLEDGE INPUT
 
