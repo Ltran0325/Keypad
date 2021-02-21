@@ -5,9 +5,9 @@
 * Program: Display input to keypad                                            *
 * 									      *
 * Important Ports:                                                            *
-* P4.x is OUTPUT to control LED                                               *
-* P8.x is OUTPUT to display digit (1 at a time)                               *
-* P9.x is INPUT from keypad       					      *
+* P4 is OUTPUT for 7-seg display digit pattern                                             *
+* P8 is OUTPUT to control active digits in row                               *
+* P9 is INPUT from keypad       					      *
 *                                            			              *
 * Demo: https://youtu.be/VUVd9RPUBLM					      *
 ******************************************************************************/
