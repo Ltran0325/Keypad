@@ -3,7 +3,7 @@ To display 4 unique digits from keypad input on a 7-segment display row using MS
 https://github.com/Ltran0325/MSP432-Keypad/blob/main/main.c
 
 **Hardware:**
-1) MSP432P401R LaunchPad: https://www.digikey.com/en/product-highlight/t/texas-instruments/msp-exp432p401r-launchpad
+1) MSP432P401R LaunchPad: https://www.digikey.com/en/products/detail/texas-instruments/MSP-EXP432P401R/5170609
 2) 7-segment display: https://www.digikey.com/en/products/detail/lite-on-inc/LTC-4627JR/408223 
 3) 4x4 matrix keypad: https://www.digikey.com/en/products/detail/adafruit-industries-llc/3844/9561536
 
