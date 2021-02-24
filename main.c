@@ -1,15 +1,15 @@
 /******************************************************************************
 * Long Tran                                                                   *
-* 									      *
-* Device:  MSP432P401R LaunchPad					      *
+*                                                                             *
+* Device:  MSP432P401R LaunchPad                                              *
 * Program: Display input to keypad                                            *
-* 									      *
+*                                                                             *
 * Important Ports:                                                            *
 * P4 is OUTPUT for 7-seg display digit pattern                                *
 * P8 is OUTPUT to control active digits in row                                *
-* P9 is INPUT from keypad column  					      *
-*                                            			              *
-* Demo: https://youtu.be/VUVd9RPUBLM					      *
+* P9 is INPUT from keypad column                                              *
+*                                                                             *
+* Demo: https://youtu.be/VUVd9RPUBLM                                          *
 ******************************************************************************/
 
 #include "msp.h"
@@ -42,91 +42,94 @@ int keypad_table[4][9] = {              // KEYPAD LAYOUT
     {d, 12,  9, d, 8, d, d, d,  7},
     {d, 13, 15, d, 0, d, d, d, 14}};
 
-enum keyStates{     // KEYPAD DEBOUNCING STATES
+typedef enum{       // KEYPAD DEBOUNCING FSM
     IDLE,           // scan for keypad input
     PRESS,          // debounce keypad press
     PROCESS,        // accept input key
     RELEASE         // debounce keypad release
-};
+}KeyStates;
+
+typedef struct{
+    KeyStates state;    // STATES OF KEYPAD FSM
+    int x;              // x position of pressed key
+    int y;              // y position of pressed key
+    int display[4];     // array for keeping the last four pressed numbers
+    int display_count;  // display array index
+    int pulses;         // debouncing pulses
+}Keypad;
 
 void gpio_init(void);   // initialize GPIO
 
-int gl_count = 0;       // input pulse counter
-
 void main(void)
 {
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;    // disable watchdog
-    gpio_init(); int i, j, temp;                   // initalize GPIO
-    int key_x;                                     // x position of pressed key
-    int key_y;                                     // y position of pressed key
-    int display[4] = {0xFF, 0xFF, 0xFF, 0xFF};     // clear display
-    int display_count = 0;                         // display array index
-    enum keyStates state = IDLE;                   // begin in IDLE state
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;             // disable watchdog
+    gpio_init(); int i, j, temp;                            // initalize GPIO
+    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0}; // Initalize keypad structure
 
     while(1){
 
-        key_x = 0;
-        key_y = 0;
+        key.x = 0;
+        key.y = 0;
 
         for(i = 0; i < 4; i++){             // UPDATE DISPLAY
             P4->OUT = 0xFF;                 // clear current display
             P8->OUT = 0xFF & ~(BIT5 >> i);  // shift active display
-            P4->OUT = display[i];           // display char
+            P4->OUT = key.display[i];       // display char
 
             for(j = 0; j < 4; j++){         // SCAN FOR INPUT
                 temp = (P9->IN) & 0x0F;
                 if(temp > 0 ){              // if key pressed detected
-                    key_x = temp;           // acknowledge input x position
-                    key_y = i;              // acknowledge input y position
+                    key.x = temp;           // acknowledge input x position
+                    key.y = i;              // acknowledge input y position
                 }
             }
         }
 
-        switch (state){
+        switch (key.state){
 
             case IDLE:                              // INPUT DETECT
-                if(key_x != 0){
-                    state = PRESS;                  // go to PRESS state
-                    gl_count = 0;
+                if(key.x != 0){
+                    key.state = PRESS;              // go to PRESS state
+                    key.pulses = 0;
                 }break;
-                
+
             case PRESS:                             // PULSE COUNTER
                 P4->OUT = 0xFF;                     // clear current display
-                P8->OUT = 0xFF & ~(BIT5 >> key_y);  // switch to row where input was prev found
+                P8->OUT = 0xFF & ~(BIT5 >> key.y);  // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;             // read column input
-                if(temp = key_x){
-                    gl_count++;
-                    if(gl_count > N){
-                       gl_count = 0;
-                       state = PROCESS;             // process successful input
+                if(temp = key.x){
+                    key.pulses++;
+                    if(key.pulses > N){
+                        key.pulses = 0;
+                        key.state = PROCESS;        // process successful input
                        }
                    }else{
-                       state = IDLE;                // else, restart
+                       key.state = IDLE;            // else, restart
                    }break;
+                   // ACKNOWLEDGE INPUT
+            case PROCESS:                           
 
-            case PROCESS:                           // ACKNOWLEDGE INPUT
-
-                if(display_count > 3){              // reset display array
-                    display_count = 0;
+                if(key.display_count > 3){          // reset display array
+                    key.display_count = 0;
                 }
-                display[display_count] = digit_array[keypad_table[key_y][key_x]];
-                display_count++;
-                state = RELEASE;                    // wait for keypad release
+                key.display[key.display_count] = digit_array[keypad_table[key.y][key.x]];
+                key.display_count++;
+                key.state = RELEASE;                     // wait for keypad release
                 break;
 
-            case RELEASE:                           // PULSE COUNTER
-                P4->OUT = 0xFF;                     // clear output to display
-                P8->OUT = 0xFF & ~(BIT5 >> key_y);  // switch to row where input was prev found
-                temp = (P9->IN) & 0x0F;             // read keypad column input
+            case RELEASE:                                // PULSE COUNTER
+                P4->OUT = 0xFF;                          // clear output to display
+                P8->OUT = 0xFF & ~(BIT5 >> key.y);       // switch to row where input was prev found
+                temp = (P9->IN) & 0x0F;                  // read keypad column input
                 if(temp == 0){
-                    gl_count++;
-                    if(gl_count > N){
-                        gl_count = 0;
-                        state = IDLE;               // release successful
+                    key.pulses++;
+                    if(key.pulses > N){
+                        key.pulses = 0;
+                        key.state = IDLE;   // release successful
                        }
                 }else{
-                    gl_count = 0;
-                    state = RELEASE;                // keypad input sensed, repeat
+                    key.pulses = 0;
+                    key.state = RELEASE;    // keypad input sensed, repeat
                     }break;
 
         }// switch end
