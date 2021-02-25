@@ -83,7 +83,7 @@ void main(void)
             key.k = 0;
         }
 
-        //wait(100);
+        wait(100);
         switch (key.state){
 
             case IDLE:                              // INPUT DETECT
@@ -103,10 +103,10 @@ void main(void)
                         key.state = PROCESS;        // process successful input
                     }
                 }else{
-                    key.state = IDLE;            // else, restart
+                    key.state = IDLE;               // else, restart
                 }break;
-                   // ACKNOWLEDGE INPUT
-            case PROCESS:
+                 					 
+            case PROCESS:			                // ACKNOWLEDGE INPUT
 
                 if(key.display_count > 3){          // reset display array
                     key.display_count = 0;
