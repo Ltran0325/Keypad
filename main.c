@@ -13,7 +13,7 @@
 ******************************************************************************/
 
 #include "msp.h"
-#define N 100       // debounce loop count
+#define N 300       // debounce loop count
 #define d 16        // digit-bit index to clear display
 
 int digit_array[17] = { // DIGIT-BIT LOOKUP TABLE
@@ -56,35 +56,34 @@ typedef struct{
     int display[4];     // array for keeping the last four pressed numbers
     int display_count;  // display array index
     int pulses;         // debouncing pulses
+    int k;              // points to active row of keypad
 }Keypad;
 
 void gpio_init(void);   // initialize GPIO
+void wait(int t);
 
 void main(void)
 {
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;             // disable watchdog
-    gpio_init(); int i, j, temp;                            // initalize GPIO
-    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0}; // Initalize keypad structure
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;                // disable watchdog
+    gpio_init(); int temp;                                     // initalize GPIO
+    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0, 0}; // Initalize keypad structure
 
     while(1){
 
-        key.x = 0;
-        key.y = 0;
-
-        for(i = 0; i < 4; i++){             // UPDATE DISPLAY
-            P4->OUT = 0xFF;                 // clear current display
-            P8->OUT = 0xFF & ~(BIT5 >> i);  // shift active display
-            P4->OUT = key.display[i];       // display char
-
-            for(j = 0; j < 4; j++){         // SCAN FOR INPUT
-                temp = (P9->IN) & 0x0F;
-                if(temp > 0 ){              // if key pressed detected
-                    key.x = temp;           // acknowledge input x position
-                    key.y = i;              // acknowledge input y position
-                }
-            }
+        P4->OUT = 0xFF;                     // blank display
+        P8->OUT = 0xFF & ~(BIT5 >> key.k);  // enable k-th display
+        P4->OUT = key.display[key.k];       // display k-th char in array
+        temp = (P9->IN) & 0x0F;             // scan input at row-k
+        if(temp > 0 ){                      // if key pressed detected
+            key.x = temp;                   // acknowledge input x position
+            key.y = key.k;                  // acknowledge input y position
+        }
+        key.k++;                            // loop k
+        if (key.k >= 4){
+            key.k = 0;
         }
 
+        //wait(100);
         switch (key.state){
 
             case IDLE:                              // INPUT DETECT
@@ -94,20 +93,20 @@ void main(void)
                 }break;
 
             case PRESS:                             // PULSE COUNTER
-                P4->OUT = 0xFF;                     // clear current display
+                P4->OUT = 0xFF;                     // blank display
                 P8->OUT = 0xFF & ~(BIT5 >> key.y);  // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;             // read column input
-                if(temp = key.x){
+                if(temp == key.x){
                     key.pulses++;
                     if(key.pulses > N){
                         key.pulses = 0;
                         key.state = PROCESS;        // process successful input
-                       }
-                   }else{
-                       key.state = IDLE;            // else, restart
-                   }break;
+                    }
+                }else{
+                    key.state = IDLE;            // else, restart
+                }break;
                    // ACKNOWLEDGE INPUT
-            case PROCESS:                           
+            case PROCESS:
 
                 if(key.display_count > 3){          // reset display array
                     key.display_count = 0;
@@ -118,7 +117,7 @@ void main(void)
                 break;
 
             case RELEASE:                                // PULSE COUNTER
-                P4->OUT = 0xFF;                          // clear output to display
+                P4->OUT = 0xFF;                          // blank display
                 P8->OUT = 0xFF & ~(BIT5 >> key.y);       // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;                  // read keypad column input
                 if(temp == 0){
@@ -126,11 +125,11 @@ void main(void)
                     if(key.pulses > N){
                         key.pulses = 0;
                         key.state = IDLE;   // release successful
-                       }
+                    }
                 }else{
                     key.pulses = 0;
                     key.state = RELEASE;    // keypad input sensed, repeat
-                    }break;
+                }break;
 
         }// switch end
     }// while(1) end
@@ -141,3 +140,10 @@ void gpio_init(void){        // INITIALIZE GPIO
     P8->DIR = 0xFF;          // P8 is display output
     P9->DIR = 0x00;          // P9 is keypad input
 }
+
+void wait(int t){
+    while(t > 0){
+        t--;
+    }
+}
+
