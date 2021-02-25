@@ -16,7 +16,7 @@
 #define N 300       // debounce loop count
 #define d 16        // digit-bit index to clear display
 
-int digit_array[17] = { // DIGIT-BIT LOOKUP TABLE
+const int digit_array[17] = { // DIGIT-BIT LOOKUP TABLE
 0b11000000,  // 0
 0b11111001,  // 1
 0b10100100,  // 2
@@ -36,7 +36,7 @@ int digit_array[17] = { // DIGIT-BIT LOOKUP TABLE
 0b11111111,  // Blank Display
 };
 
-int keypad_table[4][9] = {              // KEYPAD LAYOUT
+const int keypad_table[4][9] = {              // KEYPAD LAYOUT
     {d, 10,  3, d, 2, d, d, d,  1},     // 4 x 9 array for multiplixer keypad
     {d, 11,  6, d, 5, d, d, d,  4},     // only columns 1, 2, 4, 8 are valid
     {d, 12,  9, d, 8, d, d, d,  7},
