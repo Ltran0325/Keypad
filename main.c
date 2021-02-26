@@ -49,7 +49,7 @@ typedef enum{       // KEYPAD DEBOUNCING FSM
     RELEASE         // debounce keypad release
 }KeyStates;
 
-typedef struct{
+typedef struct{         // KEYPAD STRUCTURE 
     KeyStates state;    // states of keypad FSM
     int x;              // x position of pressed key
     int y;              // y position of pressed key
