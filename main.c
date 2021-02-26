@@ -83,7 +83,7 @@ void main(void)
             key.k = 0;
         }
 
-        wait(100);
+        wait(100);                          // place holder for future software
         switch (key.state){
 
             case IDLE:                              // INPUT DETECT
@@ -141,8 +141,8 @@ void gpio_init(void){        // INITIALIZE GPIO
     P9->DIR = 0x00;          // P9 is keypad input
 }
 
-void wait(int t){
-    while(t > 0){
+void wait(int t){            // busy wait
+    while(t >= 0){
         t--;
     }
 }
