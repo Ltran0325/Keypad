@@ -36,7 +36,7 @@ const int digit_array[17] = { // DIGIT-BIT LOOKUP TABLE
 0b11111111,  // Blank Display
 };
 
-const int keypad_table[4][9] = {              // KEYPAD LAYOUT
+const int keypad_table[4][9] = {        // KEYPAD LAYOUT
     {d, 10,  3, d, 2, d, d, d,  1},     // 4 x 9 array for multiplixer keypad
     {d, 11,  6, d, 5, d, d, d,  4},     // only columns 1, 2, 4, 8 are valid
     {d, 12,  9, d, 8, d, d, d,  7},
@@ -50,7 +50,7 @@ typedef enum{       // KEYPAD DEBOUNCING FSM
 }KeyStates;
 
 typedef struct{
-    KeyStates state;    // STATES OF KEYPAD FSM
+    KeyStates state;    // states of keypad FSM
     int x;              // x position of pressed key
     int y;              // y position of pressed key
     int display[4];     // array for keeping the last four pressed numbers
@@ -106,7 +106,7 @@ void main(void)
                     key.state = IDLE;               // else, restart
                 }break;
                  					 
-            case PROCESS:			                // ACKNOWLEDGE INPUT
+            case PROCESS:                           // ACKNOWLEDGE INPUT
 
                 if(key.display_count > 3){          // reset display array
                     key.display_count = 0;
