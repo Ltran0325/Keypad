@@ -90,7 +90,7 @@ void main(void)
         
         // Increment index-k
         key.k++;                            
-        if (key.k >= 4){key.k = 0;
+        if (key.k >= 4){key.k = 0;}
         
         // Test program resistance to software updates (observe LED lighting)
         wait(100);                          
