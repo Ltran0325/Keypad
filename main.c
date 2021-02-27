@@ -120,7 +120,6 @@ void main(void)
             
             // Update display array with accepted input
             case PROCESS:                           
-
                 if(key.display_count > 3){key.display_count = 0;}
                 key.display[key.display_count] = digit_array[keypad_table[key.y][key.x]];
                 key.display_count++;
