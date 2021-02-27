@@ -1,9 +1,10 @@
 /*******************************************************************************
-*                       MSP432 Keypad 7-Segment Solution                       *
-*                                                                              *
+*                MSP432 Keypad 7-Segment (Function) Solution                   *
+*                                                                              *                     
 * Author:  Long Tran                                                           *
 * Device:  MSP432P401R LaunchPad                                               *
 * Program: Display input to keypad                                             *
+* Version 2: This version calls the keypad FSM as a function                   *
 *                                                                              *
 * Important Ports:                                                             *
 * P4 is OUTPUT for 7-seg display digit pattern                                 *
