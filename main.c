@@ -1,16 +1,17 @@
-/******************************************************************************
-* Long Tran                                                                   *
-*                                                                             *
-* Device:  MSP432P401R LaunchPad                                              *
-* Program: Display input to keypad                                            *
-*                                                                             *
-* Important Ports:                                                            *
-* P4 is OUTPUT for 7-seg display digit pattern                                *
-* P8 is OUTPUT to control active digits in row                                *
-* P9 is INPUT from keypad column                                              *
-*                                                                             *
-* Demo: https://youtu.be/VUVd9RPUBLM                                          *
-******************************************************************************/
+/*******************************************************************************
+*                       MSP432 Keypad 7-Segment Solution                       *                  
+*                                                                              *                 
+* Author:  Long Tran                                                           *                                                       
+* Device:  MSP432P401R LaunchPad                                               *
+* Program: Display input to keypad                                             *
+*                                                                              *
+* Important Ports:                                                             *
+* P4 is OUTPUT for 7-seg display digit pattern                                 *
+* P8 is OUTPUT to control active digits in row                                 *
+* P9 is INPUT from keypad column                                               *
+*                                                                              *
+* Demo: https://youtu.be/VUVd9RPUBLM                                           *
+*******************************************************************************/
 
 // Include header file(s) and define constants
 #include "msp.h"
