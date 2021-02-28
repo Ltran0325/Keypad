@@ -48,10 +48,10 @@ const int keypad_table[4][9] = {
 
 // Define keypad states of FSM
 typedef enum{
-    IDLE,           // scan for keypad input
-    PRESS,          // debounce keypad press
-    PROCESS,        // accept input key
-    RELEASE         // debounce keypad release
+    IDLE,               // scan for keypad input
+    PRESS,              // debounce keypad press
+    PROCESS,            // accept input key
+    RELEASE             // debounce keypad release
 }KeyStates;
 
 // Define keypad structure to handle related variables
@@ -72,28 +72,28 @@ void wait(int t);       // busy wait
 void main(void)
 {
     // Initialize GPIO and keypad structure
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;                // disable watchdog
-    gpio_init(); int temp;                                     // initalize GPIO
-    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0, 0}; // Initalize keypad structure
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;                     // disable watchdog
+    gpio_init(); int temp;                                          // initalize GPIO
+    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0, 0};      // Initalize keypad structure
 
     while(1){
         // Display digit-k
-        P4->OUT = 0xFF;                     // blank display
-        P8->OUT = 0xFF & ~(BIT5 >> key.k);  // enable k-th display
-        P4->OUT = key.display[key.k];       // display k-th char in array
+        P4->OUT = 0xFF;                           // blank display
+        P8->OUT = 0xFF & ~(BIT5 >> key.k);        // enable k-th display
+        P4->OUT = key.display[key.k];             // display k-th char in array
 
         // Scan for keypad input in row-k
-        temp = (P9->IN) & 0x0F;             // scan input at row-k
-        if(temp > 0 ){                      // if key pressed detected
-            key.x = temp;                   // acknowledge input x position
-            key.y = key.k;                  // acknowledge input y position
+        temp = (P9->IN) & 0x0F;                   // scan input at row-k
+        if(temp > 0 ){                            // if key pressed detected
+            key.x = temp;                         // acknowledge input x position
+            key.y = key.k;                        // acknowledge input y position
         }
 
         // Increment index-k
         key.k++;
         if (key.k >= 4){key.k = 0;}
 
-        // Test program resistance to software updates (observe LED lighting)
+        // Busy wait to reduce flickering
         wait(100);
 
         // Switch keypad debouncing state
@@ -101,6 +101,8 @@ void main(void)
 
             // Wait for input
             case IDLE:
+                
+                // go to PRESS state if input detected
                 if(key.x != 0){
                     key.state = PRESS;
                     key.pulses = 0;
@@ -108,40 +110,54 @@ void main(void)
 
             // Accept input if N pulses of HIGH detected
             case PRESS:
-                P4->OUT = 0xFF;                     // blank display
-                P8->OUT = 0xFF & ~(BIT5 >> key.y);  // switch to row where input was prev found
-                temp = (P9->IN) & 0x0F;             // read column input
-                if(temp == key.x){key.pulses++;}    // increment pulses if last input is same as new input
+                
+                // check if pulse is repeated
+                P4->OUT = 0xFF;                              // blank display
+                P8->OUT = 0xFF & ~(BIT5 >> key.y);           // switch to row where input was prev found
+                temp = (P9->IN) & 0x0F;                      // read column input
+                    
+                // increment pulse counter if repeated
+                if(temp == key.x){key.pulses++;}    
                 else{
                     key.pulses = 0;
-                    key.state = IDLE;            // input success
+                    key.state = IDLE;               
                 }
+                
+                //  process input if N pulses
                 if(key.pulses > N){
                     key.pulses = 0;
-                    key.state = PROCESS;            // input success
+                    key.state = PROCESS;             
                 }break;
 
             // Update display array with accepted input
             case PROCESS:
-                if(key.display_count > 3){key.display_count = 0;}
-                key.display[key.display_count] = digit_array[keypad_table[key.y][key.x]];
+                
+                // display array update loop
+                if(key.display_count > 3){key.display_count = 0;}                
+                key.display[key.display_count] = digit_array[keypad_table[key.y][key.x]];       
                 key.display_count++;
                 key.state = RELEASE;
                 break;
 
             // Accept release if N pulses of LOW detected
             case RELEASE:
-                P4->OUT = 0xFF;                          // blank display
-                P8->OUT = 0xFF & ~(BIT5 >> key.y);       // switch to row where input was prev found
-                temp = (P9->IN) & 0x0F;                  // read keypad column input
+                
+                // check if key if no longer pressed
+                P4->OUT = 0xFF;                              // blank display
+                P8->OUT = 0xFF & ~(BIT5 >> key.y);           // switch to row where input was prev found
+                temp = (P9->IN) & 0x0F;                      // read keypad column input
+                
+                // increment pulse counter if no input
                 if(temp == 0){key.pulses++;}
                 else{
                     key.pulses = 0;
                     key.state = RELEASE;
                 }
+                
+                //  process release if N pulses
                 if(key.pulses > N){
                     key.pulses = 0;
-                    key.state = IDLE;                    // release successful
+                    key.state = IDLE;                       // release successful
                 }break;
 
         }// switch end
