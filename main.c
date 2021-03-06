@@ -15,11 +15,11 @@
 
 // Include header file(s) and define constants
 #include "msp.h"
-#define N 100       // debounce loop count
-#define d 16        // digit-bit index to clear display
+#define N 100   // debounce loop count
+#define d 16    // digit-bit index to clear display
 
 // Define digit-bit lookup table
-const int digit_array[17] = {
+const int look_up[17] = {
 0b11000000,  // 0
 0b11111001,  // 1
 0b10100100,  // 2
@@ -41,22 +41,14 @@ const int digit_array[17] = {
 
 // Define keypad layout
 const int keypad_table[4][9] = {
-    {d, 10,  3, d, 2, d, d, d,  1},     // 4x9 multiplixer keypad
-    {d, 11,  6, d, 5, d, d, d,  4},     // only columns 1, 2, 4, 8 are valid for single keypres
-    {d, 12,  9, d, 8, d, d, d,  7},
-    {d, 13, 15, d, 0, d, d, d, 14}};
-
-// Define keypad states of FSM
-typedef enum{
-    IDLE,               // scan for keypad input
-    PRESS,              // debounce keypad press
-    PROCESS,            // accept input key
-    RELEASE             // debounce keypad release
-}KeyStates;
+    {d, 13, 15, d, 0, d, d, d, 14},   // 4x9 multiplixer keypad
+    {d, 10,  3, d, 2, d, d, d,  1},   // only columns 1, 2, 4, 8 are valid for single keypress
+    {d, 11,  6, d, 5, d, d, d,  4},
+    {d, 12,  9, d, 8, d, d, d,  7}};
 
 // Define keypad structure to handle related variables
 typedef struct{         // KEYPAD STRUCTURE
-    KeyStates state;    // states of keypad FSM
+    enum{IDLE, PRESS, PROCESS, RELEASE} state; // keypad state variable
     int x;              // x position of pressed key
     int y;              // y position of pressed key
     int display[4];     // array for keeping the last four pressed numbers
@@ -66,108 +58,98 @@ typedef struct{         // KEYPAD STRUCTURE
 }Keypad;
 
 // Define prototypes
-void gpio_init(void);   // initialize GPIO
-void wait(int t);       // busy wait
+void gpio_init(void); // initialize GPIO
+void wait(int t);     // busy wait
 
 void main(void)
 {
     // Initialize GPIO and keypad structure
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;                     // disable watchdog
-    gpio_init(); int temp;                                          // initalize GPIO
-    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0, 0};      // Initalize keypad structure
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;                // disable watchdog
+    gpio_init(); int temp;                                     // initalize GPIO
+    Keypad key = {IDLE, 0, 0, {0xFF,0xFF,0xFF,0xFF}, 0, 0, 0}; // Initalize keypad structure
 
     while(1){
         // Display digit-k
-        P4->OUT = 0xFF;                           // blank display
-        P8->OUT = 0xFF & ~(BIT5 >> key.k);        // enable k-th display
-        P4->OUT = key.display[key.k];             // display k-th char in array
+        P4->OUT = 0xFF;                    // blank 7-seg display
+        P8->OUT = 0xFF & ~(BIT5 >> key.k); // enable k-th keypad row
+        P4->OUT = key.display[key.k];      // display k-th char in array
 
-        // Scan for keypad input in row-k
-        temp = (P9->IN) & 0x0F;                   // scan input at row-k
-        if(temp > 0 ){                            // if key pressed detected
-            key.x = temp;                         // acknowledge input x position
-            key.y = key.k;                        // acknowledge input y position
-        }
-
-        // Increment index-k
+        // scan input key (at row k)
+        temp = (P9->IN) & 0x0F;
+        
+        // increment k index
         key.k++;
         if (key.k >= 4){key.k = 0;}
-
-        // Busy wait to reduce flickering
+        
+        // reduce flickering
         wait(100);
-
+        
         // Switch keypad debouncing state
         switch (key.state){
 
             // Wait for input
             case IDLE:
-                
+            {
                 // go to PRESS state if input detected
-                if(key.x != 0){
-                    key.state = PRESS;
-                    key.pulses = 0;
-                }break;
+                if(temp > 0 ){                            
+                     key.x = temp;      // acknowledge input x position
+                     key.y = key.k;     // acknowledge input y position
+                     key.state = PRESS;                   
+                     key.pulses = 0;
+                 }break;
+            }
 
             // Accept input if N pulses of HIGH detected
             case PRESS:
-                
-                // check if pulse is repeated
-                P4->OUT = 0xFF;                              // blank display
-                P8->OUT = 0xFF & ~(BIT5 >> key.y);           // switch to row where input was prev found
-                temp = (P9->IN) & 0x0F;                      // read column input
-                    
-                // increment pulse counter if input repeated
-                if(temp == key.x){key.pulses++;}    
-                else{
-                    key.pulses = 0;
-                    key.state = IDLE;               // input fail
+            {
+                if(key.k == key.y && temp == key.x){ // pulse repeat
+                    key.pulses++;
                 }
-                
-                //  process input if N pulses
+                if(key.k == key.y && temp != key.x){ 
+                    key.state = IDLE;                // input fail
+                }
                 if(key.pulses > N){
-                    key.pulses = 0;
-                    key.state = PROCESS;            // input success     
+                    key.state = PROCESS;             // input success
                 }break;
+            }
 
             // Update display array with accepted input
             case PROCESS:
+            {
+                // process input into digit display array (decode)
+                key.display[key.display_count] = look_up[keypad_table[key.y][key.x]];   
                 
-                // display array update loop
-                if(key.display_count > 3){key.display_count = 0;}               
-                key.display[key.display_count] = digit_array[keypad_table[key.y][key.x]];       
+                // increment display digit index
                 key.display_count++;
+                if(key.display_count > 3){key.display_count = 0;}
+                
+                key.pulses = 0;
                 key.state = RELEASE;
                 break;
-
+            }
+            
             // Accept release if N pulses of LOW detected
             case RELEASE:
-                
-                // check if key is no longer pressed
-                P4->OUT = 0xFF;                              // blank display
-                P8->OUT = 0xFF & ~(BIT5 >> key.y);           // switch to row where input was prev found
-                temp = (P9->IN) & 0x0F;                      // read keypad column input
-                
-                // increment pulse counter if no input
-                if(temp == 0){key.pulses++;}
-                else{
-                    key.pulses = 0;                         
-                    key.state = RELEASE;                    // release fail
+            {
+                if(key.k == key.y && temp == 0){  // release repeat
+                    key.pulses++;
                 }
-                
-                //  process release if N pulses
+                if(key.k == key.y && temp != 0){    
+                    key.pulses = 0;               // release fail
+                }
                 if(key.pulses > N){
-                    key.pulses = 0;
-                    key.state = IDLE;                       // release successful
+                    key.state = IDLE;             // release success
                 }break;
-
+            }
+            
         }// switch end
     }// while(1) end
 }// main end
 
 void gpio_init(void){
-    P4->DIR = 0xFF;          // P4 is LED output
-    P8->DIR = 0xFF;          // P8 is display output
-    P9->DIR = 0x00;          // P9 is keypad input
+    P4->DIR = 0xFF;  // P4 is LED output
+    P8->DIR = 0xFF;  // P8 is display output
+    P9->DIR = 0x00;  // P9 is keypad input
 }
 
 void wait(int t){
