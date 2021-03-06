@@ -116,24 +116,24 @@ void main(void)
                 P8->OUT = 0xFF & ~(BIT5 >> key.y);           // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;                      // read column input
                     
-                // increment pulse counter if repeated
+                // increment pulse counter if input repeated
                 if(temp == key.x){key.pulses++;}    
                 else{
                     key.pulses = 0;
-                    key.state = IDLE;               
+                    key.state = IDLE;               // input fail
                 }
                 
                 //  process input if N pulses
                 if(key.pulses > N){
                     key.pulses = 0;
-                    key.state = PROCESS;             
+                    key.state = PROCESS;            // input success     
                 }break;
 
             // Update display array with accepted input
             case PROCESS:
                 
                 // display array update loop
-                if(key.display_count > 3){key.display_count = 0;}                
+                if(key.display_count > 3){key.display_count = 0;}               
                 key.display[key.display_count] = digit_array[keypad_table[key.y][key.x]];       
                 key.display_count++;
                 key.state = RELEASE;
@@ -142,7 +142,7 @@ void main(void)
             // Accept release if N pulses of LOW detected
             case RELEASE:
                 
-                // check if key if no longer pressed
+                // check if key is no longer pressed
                 P4->OUT = 0xFF;                              // blank display
                 P8->OUT = 0xFF & ~(BIT5 >> key.y);           // switch to row where input was prev found
                 temp = (P9->IN) & 0x0F;                      // read keypad column input
@@ -150,8 +150,8 @@ void main(void)
                 // increment pulse counter if no input
                 if(temp == 0){key.pulses++;}
                 else{
-                    key.pulses = 0;
-                    key.state = RELEASE;
+                    key.pulses = 0;                         
+                    key.state = RELEASE;                    // release fail
                 }
                 
                 //  process release if N pulses
